@@ -1,0 +1,49 @@
+{
+  "batch": {
+    "n": 20,
+    "schema_ok": 20,
+    "reply_ok": 20,
+    "covered": 8,
+    "not_covered": 12,
+    "trends": {
+      "recurring": 6,
+      "one-off": 11,
+      "rising": 3
+    },
+    "holds": 2,
+    "reviewer_pass": 20,
+    "rework": 0,
+    "pii_complaints": 0,
+    "agents_fired_totals": {
+      "facts": 20,
+      "pattern": 20,
+      "compliance": 20,
+      "orchestrator": 20,
+      "reviewer": 20
+    },
+    "max_start_spread_ms": 11.841
+  },
+  "branches": {
+    "pii_state_clean": true,
+    "pii_caught": true,
+    "pii_inject_state_clean": true,
+    "flag_blocks_send": true,
+    "uncited_caught": true
+  },
+  "advice": {
+    "attempts": 23,
+    "refused": 23
+  },
+  "refinement": {
+    "routing_ok": true,
+    "counters_ok": true,
+    "clarify_ok": true,
+    "cap_ok": true
+  },
+  "mcp_gate": {
+    "blocked_pending": true,
+    "blocked_rejected": true,
+    "approved_ran": true
+  },
+  "pii_leaks_in_files": []
+}

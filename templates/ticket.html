@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ticket {{ t.tid }} - Support Response Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head><body>
+{% set f = t.outputs.facts %}{% set p = t.outputs.pattern %}{% set c = t.outputs.compliance %}{% set tm = t.timing %}
+<div class="band"><div class="wrap"><a class="brand" href="/"><i></i>Support Response Desk</a>
+  <a class="btn-new" href="/">New ticket</a></div></div>
+
+<header class="thead"><div class="wrap">
+  <h1>Ticket {{ t.tid }}
+    <span class="pill {{ 'ok' if gate.status=='approved' else ('bad' if gate.status=='rejected' else '') }}">{{ 'Waiting for your decision' if gate.status=='pending' else gate.status|capitalize }}</span></h1>
+  <p class="quote">{{ t.message }}</p>
+  {% if t.pii_removed %}<p class="removed">Removed before anything was stored:
+    {% for x in t.pii_removed %}<span class="pill warn">{{ x.type }} &times;{{ x.count }}</span>{% endfor %}</p>{% endif %}
+</div></header>
+
+<main class="wrap">
+<ol class="rail" aria-label="Progress">
+  <li><b>Input gate</b><span class="s"><i class="dot {{ '' if t.pii_removed or true else 'idle' }}"></i>{{ 'personal data removed' if t.pii_removed else 'nothing to remove' }}</span></li>
+  <li><b>Three agents</b><span class="s"><i class="dot {{ 'bad' if t.schema_problems else '' }}"></i>{{ 'schema problem' if t.schema_problems else 'all returned' }}</span></li>
+  <li><b>Orchestrator</b><span class="s"><i class="dot {{ 'warn' if t.draft.routing.hold else '' }}"></i>{{ 'hold: escalate' if t.draft.routing.hold else 'draft ready' }}</span></li>
+  <li><b>Reviewer</b><span class="s"><i class="dot {{ 'bad' if t.flagged else '' }}"></i>{{ 'flagged' if t.flagged else 'passed' }}{{ ' after rework' if t.rework_used and not t.flagged else '' }}</span></li>
+  <li><b>You</b><span class="s"><i class="dot {{ 'idle' if gate.status=='pending' else ('bad' if gate.status=='rejected' else '') }}"></i>{{ 'waiting' if gate.status=='pending' else gate.status }}</span></li>
+</ol>
+
+{% if msg %}<div class="banner warn" role="alert">{{ msg }}</div>{% endif %}
+
+<div class="layout">
+<div>
+  <section class="card">
+    <h2>Three agents, run together</h2>
+    <p class="sub">They started within {{ tm.start_spread_ms }} ms of each other and never read each other's output.</p>
+    <div class="tl" aria-label="Timeline of the parallel run">
+      {% for key,label in [('facts','Facts'),('pattern','Pattern'),('compliance','Compliance')] %}
+      {% set a = tm.agents.get(key) %}
+      <div class="tl-row"><span>{{ label }}</span>
+        <span class="tl-track">{% if a %}<i style="left:{{ [a.start_ms / (tm.wall_ms or 1) * 100, 96]|min }}%;width:{{ [a.duration_ms / (tm.wall_ms or 1) * 100, 100]|min }}%"></i>{% endif %}</span>
+        <span class="mute">{{ (a.duration_ms ~ ' ms') if a else 'not re-run' }}</span></div>
+      {% endfor %}
+    </div>
+    <div class="agents">
+      <div class="agent"><h3>Facts <span class="pill {{ 'ok' if f.status=='covered' else 'warn' }}">{{ 'cited' if f.status=='covered' else 'not covered' }}</span></h3>
+        {% if f.status=='covered' %}<p>{{ f.answer }}</p><a href="{{ f.citation_url }}" target="_blank" rel="noopener">{{ f.citation_url }}</a>
+        {% else %}<p class="mute">Searched: {{ f.searched|join('; ') }}</p>{% endif %}
+        <p class="mute">Runs: {{ t.counters.facts }}</p></div>
+      <div class="agent pat"><h3>Pattern <span class="pill {{ 'bad' if p.trend=='rising' else ('warn' if p.trend=='recurring' else '') }}">{{ p.trend }}</span></h3>
+        <p>{{ p.similar_count }} similar reviews in {{ p.window.days }} days<br><span class="mute">{{ p.recent_count }} recent vs {{ p.prior_count }} before &middot; {{ p.window.start }} to {{ p.window.end }}</span></p>
+        <p class="mute">Theme: {{ p.theme }} &middot; Runs: {{ t.counters.pattern }}</p></div>
+      <div class="agent cmp"><h3>Compliance <span class="pill {{ 'warn' if c.incoming_status=='flagged' else 'ok' }}">{{ c.incoming_status }}</span></h3>
+        <p>Personal data removed: {{ c.pii_found|map(attribute='type')|join(', ') or 'none' }}<br>Advice or returns asked: {{ 'yes' if c.advice_requested else 'no' }}</p>
+        <p class="mute">Runs: {{ t.counters.compliance }}</p></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Reply draft</h2>
+    <p class="sub">{{ t.draft.reply.sentences|length }} sentence(s), facts only{{ ' &middot; written by Groq' if t.draft.mode != 'template' and t.draft.mode else '' }}</p>
+    {% if t.draft.routing.hold %}<div class="banner warn">Hold: Facts has a clean answer, but this issue is {{ p.trend }} ({{ p.recent_count }} in the last {{ p.window.recent_days }} days). Do not close the ticket; escalate.</div>{% endif %}
+    {% if t.flagged %}<div class="banner bad">The reviewer flagged this draft after one rework. Sending is switched off.</div>{% endif %}
+    <div class="letter">{{ t.draft.reply.full_text|reply_html }}</div>
+  </section>
+
+  <section class="card">
+    <h2>Internal routing note</h2>
+    <p class="sub">For the team, not the customer.</p>
+    <p class="routing">{{ t.draft.routing.note }}</p>
+  </section>
+</div>
+
+<aside class="side">
+  <section class="card">
+    <h2>Reviewer</h2>
+    {% for a in t.review_attempts %}<p class="attempt"><b>Attempt {{ a.attempt }}{{ ' (rework)' if a.attempt==2 else '' }}</b>
+      <span class="pill {{ 'ok' if a.passed else 'bad' }}">{{ 'passed' if a.passed else 'failed' }}</span>
+      {% for x in a.failures %}<br><code>{{ x.code }}</code> <span class="mute">{{ x.detail }}</span>{% endfor %}</p>{% endfor %}
+    <p class="mute" style="margin-bottom:0">Checks: citations, advice wording, return figures, personal data, figures match the fact, 3 sentences or fewer, last-checked date. One rework allowed.</p>
+  </section>
+
+  <section class="card refine">
+    <h2>Refine <span class="mute">({{ left }} of {{ cfg.MAX_REFINEMENTS }} left)</span></h2>
+    <p class="sub">Only the agents affected by your note run again.</p>
+    {% if gate.status=='pending' and left>0 %}
+    <form method="post" action="/ticket/{{ t.tid }}/refine">
+      <input type="text" name="instruction" placeholder='"shorter", "it is about the mid cap fund", "is this the fee issue from last week"' required aria-label="Refinement instruction">
+      <button class="sec" type="submit">Re-run affected agents</button></form>{% endif %}
+    {% if t.fired_log %}<table style="margin-top:10px"><tr><th>Turn</th><th>Request</th><th>Agents run</th></tr>
+      {% for e in t.fired_log %}<tr><td>{{ e.turn }}</td><td>{{ e.what }}</td><td>{{ e.agents_fired|join(', ') }}</td></tr>{% endfor %}</table>{% endif %}
+  </section>
+
+  <section class="card approve">
+    <h2>Approve</h2>
+    <p class="sub">Nothing is saved until you click approve. Approving appends a record to the support log and creates an email draft. The email is never sent. (These two actions are the MCP step from the brief.)</p>
+    {% if gate.status=='pending' %}
+    <form method="post" action="/ticket/{{ t.tid }}/decide" class="actions">
+      <button name="decision" value="approve" {{ 'disabled' if t.send_blocked else '' }}>{{ 'Approve escalation (ticket stays open)' if t.draft.routing.hold else 'Approve and save' }}</button>
+      <button class="sec" name="decision" value="reject">Reject</button></form>
+      {% if t.send_blocked %}<p class="mute">Approve is off because the reviewer flagged this draft.</p>{% endif %}
+    {% elif done %}<p><b>Done.</b> Approved {{ gate.decided_at }}.</p>
+      <ul>{% for n,r in done %}<li><code>{{ n }}</code> {{ r }}</li>{% endfor %}</ul>
+    {% else %}<p>Rejected. Nothing was written.</p>{% endif %}
+  </section>
+</aside>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Support Response Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head><body>
+<div class="band"><div class="wrap"><a class="brand" href="/"><i></i>Support Response Desk</a>
+  <small>{% if llm %}Groq on{% else %}Rules and templates (no LLM){% endif %}</small></div></div>
+
+<header class="hero"><div class="wrap">
+  <h1>Answer one customer, with proof.</h1>
+  <p>Groww and HDFC Mutual Fund questions go through three checkers at once. You get a cited, facts-only reply and a routing note, and nothing is saved until you approve.</p>
+  <ul class="flow">
+    <li><b>Facts</b> finds the cited answer</li>
+    <li><b>Pattern</b> checks if others report it</li>
+    <li><b>Compliance</b> removes personal data, refuses advice</li>
+    <li><b>Reviewer</b> blocks a bad draft</li>
+  </ul>
+</div></header>
+
+<main class="wrap pull">
+<form class="panel" method="post" action="/submit">
+  <label for="message">Customer question or complaint</label>
+  <textarea id="message" name="message" placeholder="Paste a message. PAN, Aadhaar, phone, email, account numbers and OTPs are removed before anything is stored."></textarea>
+
+  <div class="chipgroup"><span>Try a scenario</span><div class="chips">
+    {% set names = {'clean':'Question the corpus answers','not_covered':'Question it cannot answer','recurring':'Complaint many users report','pii':'Message with PAN and phone'} %}
+    {% for k,v in branch.items() %}<button type="button" class="chip" data-text="{{ v }}">{{ names.get(k, k) }}</button>{% endfor %}
+  </div></div>
+  <div class="chipgroup"><span>Try to get advice out of it</span><div class="chips">
+    {% for a in attacks[:3] %}<button type="button" class="chip adv" data-text="{{ a }}">{{ a[:34] }}{{ '...' if a|length > 34 else '' }}</button>{% endfor %}
+  </div></div>
+
+  <div class="chipgroup"><label for="pick" style="font-size:14px;font-weight:600;font-family:var(--text)">Or use a real 1-2 star review from the Milestone 2 CSV</label>
+  <select id="pick" onchange="if(this.value)fill(this.value)">
+    <option value="">Choose one of 20 sampled reviews</option>
+    {% for s in samples %}<option value="{{ s.text }}">{{ s.id }} ({{ s.rating }}★) {{ s.text[:90] }}</option>{% endfor %}
+  </select></div>
+
+  <div class="submitrow"><button type="submit">Run the desk</button>
+    <span class="mute">Takes about a second. Personal data never leaves the first step.</span></div>
+</form>
+
+<section class="rules" aria-label="Rules">
+  <div><h3>Facts only</h3><p>No advice, no returns, no buy or sell wording. Every claim has one link or the reply says it is not covered.</p></div>
+  <div><h3>A human decides</h3><p>Refine up to 5 times, then approve. Approval saves a record and drafts an email. Nothing is sent.</p></div>
+  <div><h3>No personal data kept</h3><p>Redaction runs first. Logs hold ids and codes, never the message.</p></div>
+</section>
+</main>
+<script>
+function fill(t){var m=document.getElementById('message');m.value=t;m.focus()}
+document.querySelectorAll('.chip').forEach(function(b){b.addEventListener('click',function(){fill(b.dataset.text)})});
+</script>
+</body></html>
