@@ -100,6 +100,7 @@
       {% if t.send_blocked %}<p class="mute">Approve is off because the reviewer flagged this draft.</p>{% endif %}
     {% elif done %}<p><b>Done.</b> Approved {{ gate.decided_at }}.</p>
       <ul>{% for n,r in done %}<li><code>{{ n }}</code> {{ r }}</li>{% endfor %}</ul>
+      <p><a href="/saved" target="_blank" rel="noopener">View the saved record and email draft</a></p>
     {% else %}<p>Rejected. Nothing was written.</p>{% endif %}
   </section>
 </aside>

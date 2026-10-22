@@ -50,6 +50,15 @@ def ticket(tid):
                            msg=request.args.get("msg"))
 
 
+@app.get("/saved")
+def saved():
+    """Shows what the approval step wrote (support log + email draft), so a hosted reviewer can see it."""
+    def read(name):
+        p = config.OUT / name
+        return p.read_text(encoding="utf-8") if p.exists() else "(nothing saved yet: approve a ticket first)"
+    return render_template("saved.html", log=read("support_log.md"), draft=read("support_reply_draft.txt"))
+
+
 @app.post("/ticket/<tid>/refine")
 def refine(tid):
     t = DESK.tickets.get(tid) or abort(404)

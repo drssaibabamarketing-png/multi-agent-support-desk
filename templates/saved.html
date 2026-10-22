@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Saved record - Support Response Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>pre{white-space:pre-wrap;word-break:break-word;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px;font:13.5px/1.55 ui-monospace,Consolas,monospace;margin:0}</style>
+</head><body>
+<div class="band"><div class="wrap"><a class="brand" href="/"><i></i>Support Response Desk</a><a class="btn-new" href="/">New ticket</a></div></div>
+<main class="wrap" style="padding-top:24px;padding-bottom:60px">
+  <section class="card"><h2>Appended record (support_log.md)</h2><p class="sub">What the approval step added to the support log. Stand-in for the Google Doc.</p><pre>{{ log }}</pre></section>
+  <section class="card"><h2>Email draft (never sent)</h2><p class="sub">Created after approval. Saved as an unsent draft only.</p><pre>{{ draft }}</pre></section>
+</main></body></html>
