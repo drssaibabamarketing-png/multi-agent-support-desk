@@ -3,3 +3,9 @@ venv/
 __pycache__/
 logs/
 *.pyc
+
+outputs/support_log.md
+outputs/support_log.jsonl
+outputs/support_reply_draft.eml
+outputs/support_reply_draft.txt
+outputs/audit_log.jsonl
