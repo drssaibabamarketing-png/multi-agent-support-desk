@@ -31,7 +31,7 @@ flowchart TD
 | `pipeline.py`, `data/reviews.csv` | Milestone 2 themes and reviews |
 | `mcp_layer.py` | Milestone 2 approval gate, record append, email draft |
 | `pii.py`, `llm.py`, `config.py`, `eval_set.py` | redaction, optional Groq client, settings, test inputs |
-| `run_eval.py`, `tests/` | evidence generator, unit tests |
+| `run_eval.py`, `make_samples.py`, `tests/` | evidence generator, sample drafts generator, unit tests |
 | `outputs/evidence/` | batch, branch, advice, refinement and gate evidence |
 | `SOURCES.md` | every public source used |
 | `render.yaml` | optional free deploy on Render |
@@ -91,6 +91,129 @@ They run in threads started together behind a barrier (`desk._parallel`), receiv
 | No PII in logs, state or outputs | 0 leaks | `summary.json` |
 
 The 20 complaints are chosen by a fixed rule (`eval_set.sample_complaints`): 1-2★, 60-300 characters, 8 fee/charge complaints + 12 others. 12 of 20 return "not covered" because the corpus holds scheme facts and Groww fee pages, not app-bug or support-process content. That is the correct behaviour (no general-knowledge fallback), and those tickets are routed to a team.
+
+## Sample outputs
+Five real complaints from the reviews CSV with the drafts they produced, then the doc entry and email draft written after a human approved one ticket. Regenerate with `python make_samples.py`; the same content is in `outputs/evidence/sample_outputs.md`.
+
+### 1. R1497 (1★)
+**Complaint:** Use something else. Here Brokerage charge is very very high. This will finish your hard earned profit.
+
+- **Facts:** covered -> https://groww.in/pricing
+- **Pattern:** recurring, 8 similar reviews in 28 days (3 recent / 5 prior), theme 'Pricing & charges confusion'
+- **Compliance:** clean; advice asked: False
+- **Reviewer:** passed
+- **Agents fired:** facts, pattern, compliance, orchestrator, reviewer
+
+**Reply draft:**
+
+> Brokerage is the fee the broker charges for each executed equity order; Groww publishes its current rates on its pricing page ([source](https://groww.in/pricing)). If this doesn't resolve your concern, reply here and our team will take a look.
+> 
+> Last checked: 22 Oct 2026
+
+**Routing note:** Route to: Billing & Charges Support. Priority: P2 (Medium). Facts clean and no escalation signal. Facts: clean answer from https://groww.in/pricing. Pattern: recurring - 8 similar reviews in the last 28 days (3 in the last 14 days vs 5 in the 14 days before), 2026-09-23 to 2026-10-21; theme 'Pricing & charges confusion'. Compliance: clean. Action: Send after approval; ticket can close once the customer confirms.
+
+### 2. R3277 (1★)
+**Complaint:** stocks and ETF buy Kare to brokerage Dena padta hai , beche to bhi brokerage Dena padta hai ... Mera 3 different stock hai unhen bhejun to fir se brokerage Dena padta hai 130/ 140 rupaye total brokerage amount 🫩
+
+- **Facts:** covered -> https://groww.in/pricing
+- **Pattern:** one-off, 1 similar reviews in 28 days (0 recent / 1 prior), theme 'Pricing & charges confusion'
+- **Compliance:** clean; advice asked: False
+- **Reviewer:** passed
+- **Agents fired:** facts, pattern, compliance, orchestrator, reviewer
+
+**Reply draft:**
+
+> Brokerage is the fee the broker charges for each executed equity order; Groww publishes its current rates on its pricing page ([source](https://groww.in/pricing)). If this doesn't resolve your concern, reply here and our team will take a look.
+> 
+> Last checked: 22 Oct 2026
+
+**Routing note:** Route to: Billing & Charges Support. Priority: P3 (Low). Facts clean and no escalation signal. Facts: clean answer from https://groww.in/pricing. Pattern: one-off - 1 similar reviews in the last 28 days (0 in the last 14 days vs 1 in the 14 days before), 2026-09-23 to 2026-10-21; theme 'Pricing & charges confusion'. Compliance: clean. Action: Send after approval; ticket can close once the customer confirms.
+
+### 3. R484 (1★)
+**Complaint:** inke pass customer care aadmi nhi 30 min tak Wait karwate hai Don't use
+
+- **Facts:** not_covered (searched: 74 corpus facts; AMC / AMFI / SEBI page; Groww fee explainer (M2); HDFC scheme page; topics tried: no recognised scheme/fee topic; schemes detected: none)
+- **Pattern:** recurring, 6 similar reviews in 28 days (4 recent / 2 prior), theme 'Customer support & trust'
+- **Compliance:** clean; advice asked: False
+- **Reviewer:** passed
+- **Agents fired:** facts, pattern, compliance, orchestrator, reviewer
+
+**Reply draft:**
+
+> I couldn't find this in our official sources, so I've passed it to our team to look into. If this doesn't resolve your concern, reply here and our team will take a look.
+> 
+> Last checked: 22 Oct 2026
+
+**Routing note:** Route to: Escalations (Customer Experience). Priority: P2 (Medium). No cited fact available. Facts: NOT covered by the corpus (searched: HDFC scheme page; topics tried: no recognised scheme/fee topic; schemes detected: none). Pattern: recurring - 6 similar reviews in the last 28 days (4 in the last 14 days vs 2 in the 14 days before), 2026-09-23 to 2026-10-21; theme 'Customer support & trust'. Compliance: clean. Action: OPEN: needs a human answer (corpus does not cover this).
+
+### 4. R1547 (1★)
+**Complaint:** very high delivery charges 🤪, they executed order in multiple and charges are insne... pure scam 🤯
+
+- **Facts:** covered -> https://groww.in/pricing
+- **Pattern:** rising, 13 similar reviews in 28 days (8 recent / 5 prior), theme 'Pricing & charges confusion'
+- **Compliance:** clean; advice asked: False
+- **Reviewer:** passed
+- **Agents fired:** facts, pattern, compliance, orchestrator, reviewer
+
+**Reply draft:**
+
+> Brokerage is the fee the broker charges for each executed equity order; Groww publishes its current rates on its pricing page ([source](https://groww.in/pricing)). If this doesn't resolve your concern, reply here and our team will take a look.
+> 
+> Last checked: 22 Oct 2026
+
+**Routing note:** Route to: Billing & Charges Support. Priority: P1 (High). Agents disagree: Facts has a clean answer but Pattern shows the same issue is rising (8 in the last 14 days). Facts: clean answer from https://groww.in/pricing. Pattern: rising - 13 similar reviews in the last 28 days (8 in the last 14 days vs 5 in the 14 days before), 2026-09-23 to 2026-10-21; theme 'Pricing & charges confusion'. Compliance: clean. Action: HOLD: do not send as a final answer and do not close the ticket; escalate to the team above.
+
+### 5. R3885 (1★)
+**Complaint:** Bhai internet sab thik hai fir bhi ye app open nahi hota.. internet issue batata hai hamesha..isliye use karna band kiya
+
+- **Facts:** not_covered (searched: 74 corpus facts; AMC / AMFI / SEBI page; Groww fee explainer (M2); HDFC scheme page; topics tried: no recognised scheme/fee topic; schemes detected: none)
+- **Pattern:** one-off, 2 similar reviews in 28 days (1 recent / 1 prior), theme 'App performance & bugs'
+- **Compliance:** clean; advice asked: False
+- **Reviewer:** passed
+- **Agents fired:** facts, pattern, compliance, orchestrator, reviewer
+
+**Reply draft:**
+
+> I couldn't find this in our official sources, so I've passed it to our team to look into. If this doesn't resolve your concern, reply here and our team will take a look.
+> 
+> Last checked: 22 Oct 2026
+
+**Routing note:** Route to: App Tech Support. Priority: P3 (Low). No cited fact available. Facts: NOT covered by the corpus (searched: HDFC scheme page; topics tried: no recognised scheme/fee topic; schemes detected: none). Pattern: one-off - 2 similar reviews in the last 28 days (1 in the last 14 days vs 1 in the 14 days before), 2026-09-23 to 2026-10-21; theme 'App performance & bugs'. Compliance: clean. Action: OPEN: needs a human answer (corpus does not cover this).
+
+### Appended doc entry (after a human approved ticket 2)
+```markdown
+---
+### Ticket f4087332 - 2026-10-22  [P3]  status: reply approved
+**Complaint (redacted):** stocks and ETF buy Kare to brokerage Dena padta hai , beche to bhi brokerage Dena padta hai ... Mera 3 different stock hai unhen bhejun to fir se brokerage Dena padta hai 130/ 140 rupaye total brokerage amount 🫩
+
+**Reply draft:**
+
+Brokerage is the fee the broker charges for each executed equity order; Groww publishes its current rates on its pricing page ([source](https://groww.in/pricing)). If this doesn't resolve your concern, reply here and our team will take a look.
+
+Last checked: 22 Oct 2026
+
+**Citation:** https://groww.in/pricing  |  **Last checked:** 22 Oct 2026
+
+**Routing note:** Route to: Billing & Charges Support. Priority: P3 (Low). Facts clean and no escalation signal. Facts: clean answer from https://groww.in/pricing. Pattern: one-off - 1 similar reviews in the last 28 days (0 in the last 14 days vs 1 in the 14 days before), 2026-09-23 to 2026-10-21; theme 'Pricing & charges confusion'. Compliance: clean. Action: Send after approval; ticket can close once the customer confirms.
+
+**Agents fired:** facts, pattern, compliance, orchestrator, reviewer
+```
+
+### Email draft created after approval (never sent)
+```text
+Subject: Support reply draft - ticket f4087332
+
+Brokerage is the fee the broker charges for each executed equity order; Groww publishes its current rates on its pricing page ([source](https://groww.in/pricing)). If this doesn't resolve your concern, reply here and our team will take a look.
+
+Last checked: 22 Oct 2026
+
+--- INTERNAL (remove before sending) ---
+Route to: Billing & Charges Support. Priority: P3 (Low). Facts clean and no escalation signal. Facts: clean answer from https://groww.in/pricing. Pattern: one-off - 1 similar reviews in the last 28 days (0 in the last 14 days vs 1 in the 14 days before), 2026-09-23 to 2026-10-21; theme 'Pricing & charges confusion'. Compliance: clean. Action: Send after approval; ticket can close once the customer confirms.
+```
+The `.eml` version (`X-Unsent: 1`) is in `outputs/evidence/sample_mcp/`.
+
+### A reviewer rejection
+The full walk-through is in `outputs/evidence/branch_tests.md` (4b and 4c). In short: when an orchestrator draft echoes a PAN and phone number, the reviewer fails it with `PII_SURVIVED` and `UNGROUNDED_FIGURE`, the draft goes back once with those failures named, and the second draft passes. When both drafts give advice ("You should stay invested longer"), the reviewer returns `UNCITED_FACT` and `ADVICE_LANGUAGE` twice, the draft is shown with a flag, and Approve is disabled (the server also answers 403).
 
 ## Demo script (about 2 minutes)
 1. `python app.py`, open the page. Pick the **clean** chip, Run: show the three agent cards, the reply with its link and "Last checked", the routing note, the reviewer verdict.
